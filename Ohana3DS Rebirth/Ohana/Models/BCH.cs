@@ -390,7 +390,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                     textureSize.Width,
                     textureSize.Height,
                     textureCommands.getTexUnit0Format());
-
+                texture.Save($"{dumpPath}\\{textureName}.bmp");// dumps in filename dir.
                 models.texture.Add(new RenderBase.OTexture(texture, textureName));
             }
 
