@@ -1882,6 +1882,13 @@ namespace Ohana3DS_Rebirth.Ohana.Models
 
             data.Close();
 
+            //dump,yeah. for each model.                                    
+            for (int i = 0; i < models.model.Count; i++)
+            {
+                string name = models.model[i].name + ".smd";
+                SMD.export(models, Path.Combine(dumpPath, name), i);
+            }
+
             return models;
         }
 
