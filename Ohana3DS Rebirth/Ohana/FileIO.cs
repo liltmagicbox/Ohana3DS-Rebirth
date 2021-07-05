@@ -40,8 +40,9 @@ namespace Ohana3DS_Rebirth.Ohana
 
         public static file load(string fileName)
         {
+            BCH.dump_makedir(fileName);// a line for make dir! filedir stored in BCH.great!
             switch (Path.GetExtension(fileName).ToLower())
-            {
+            {                
                 case ".mbn": return new file { data = MBN.load(fileName), type = formatType.model };
                 case ".xml": return new file { data = NLP.load(fileName), type = formatType.model };
                 default: return load(new FileStream(fileName, FileMode.Open));

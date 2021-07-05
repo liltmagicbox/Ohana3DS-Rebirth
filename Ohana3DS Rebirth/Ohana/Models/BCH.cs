@@ -19,6 +19,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using Ohana3DS_Rebirth.Ohana.Models.GenericFormats;//dump
 
 using Ohana3DS_Rebirth.Ohana.Models.PICA200;
 
@@ -142,13 +143,32 @@ namespace Ohana3DS_Rebirth.Ohana.Models
             public uint boundingBoxOffset;
         }
 
-        #region "Import"
-        /// <summary>
-        ///     Loads a BCH file.
-        /// </summary>
-        /// <param name="fileName">File Name of the BCH file</param>
-        /// <returns></returns>
-        public static RenderBase.OModelGroup load(string fileName)
+        //for dump : auto extraction texture anim.
+        public static string dumpPath;
+        public static void dump_makedir(string fileName)
+        {
+            string onlyname = Path.GetFileNameWithoutExtension(fileName);
+
+            uint filei = 0;
+            dumpPath = $"c:\\ohana\\dump\\{onlyname}";
+            DirectoryInfo di = new DirectoryInfo(dumpPath);
+            while (di.Exists)
+            {
+                filei++;
+                dumpPath = $"c:\\ohana\\dump\\{onlyname}_{filei}";
+                di = new DirectoryInfo(dumpPath);
+            }
+            di.Create();
+            Console.WriteLine(dumpPath);
+        }
+
+            #region "Import"
+            /// <summary>
+            ///     Loads a BCH file.
+            /// </summary>
+            /// <param name="fileName">File Name of the BCH file</param>
+            /// <returns></returns>
+            public static RenderBase.OModelGroup load(string fileName)
         {
             return load(new MemoryStream(File.ReadAllBytes(fileName)));
         }
