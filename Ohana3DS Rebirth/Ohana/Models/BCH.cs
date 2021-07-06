@@ -1023,6 +1023,15 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                 lightAnimation.lightType = (RenderBase.OLightType)((typeFlags & 3) - 1);
                 lightAnimation.lightUse = (RenderBase.OLightUse)((typeFlags >> 2) & 3);
 
+                StreamWriter lit_anim_txt = new StreamWriter($"{dumpPath}\\lit_anim.txt", true);
+                lit_anim_txt.WriteLine($"info");
+                lit_anim_txt.WriteLine($"{lightAnimation.name}");
+                lit_anim_txt.WriteLine($"{lightAnimation.loopMode}");
+                lit_anim_txt.WriteLine($"{lightAnimation.frameSize}");
+                lit_anim_txt.WriteLine($"{lightAnimation.lightType}");
+                lit_anim_txt.WriteLine($"{lightAnimation.lightUse}");
+                lit_anim_txt.WriteLine($"-----");//like end of smd.
+
                 for (int i = 0; i < dataTableEntries; i++)
                 {
                     data.Seek(dataTableOffset + (i * 4), SeekOrigin.Begin);
@@ -1038,6 +1047,10 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                     animationData.type = (RenderBase.OLightAnimationType)(animationTypeFlags & 0xff);
                     RenderBase.OSegmentType segmentType = (RenderBase.OSegmentType)((animationTypeFlags >> 16) & 0xf);
 
+                    lit_anim_txt.WriteLine($"animation");
+                    lit_anim_txt.WriteLine($"{animationData.name}");
+                    lit_anim_txt.WriteLine($"{animationData.type}");
+
                     int segmentCount = 0;
                     switch (segmentType)
                     {
@@ -1046,6 +1059,14 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                         case RenderBase.OSegmentType.vector3: segmentCount = 3; break;
                         case RenderBase.OSegmentType.single: segmentCount = 1; break;
                         case RenderBase.OSegmentType.boolean: segmentCount = 1; break;
+                    }
+                    switch (segmentType)
+                    {
+                        case RenderBase.OSegmentType.transform: lit_anim_txt.WriteLine($"transform"); break;
+                        case RenderBase.OSegmentType.rgbaColor: lit_anim_txt.WriteLine($"rgbaColor"); break;
+                        case RenderBase.OSegmentType.vector3: lit_anim_txt.WriteLine($"vector3"); break;
+                        case RenderBase.OSegmentType.single: lit_anim_txt.WriteLine($"single"); break;
+                        case RenderBase.OSegmentType.boolean: lit_anim_txt.WriteLine($"boolean"); break;
                     }
 
                     uint constantMask = 0x40;
@@ -1092,10 +1113,19 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                         }
 
                         animationData.frameList.Add(frame);
+                        foreach (RenderBase.OAnimationKeyFrame keyframe in frame.keyFrames)
+                        {
+                            lit_anim_txt.Write($"{keyframe.frame}    ");
+                            lit_anim_txt.Write($"{keyframe.value}    ");
+                            lit_anim_txt.Write($"{keyframe.inSlope}    ");
+                            lit_anim_txt.WriteLine($"{keyframe.outSlope}    ");
+                        }
+                        lit_anim_txt.WriteLine($"-----");//like end of smd.
                     }
 
                     lightAnimation.data.Add(animationData);
                 }
+                lit_anim_txt.Close();
 
                 models.lightAnimation.list.Add(lightAnimation);
             }
