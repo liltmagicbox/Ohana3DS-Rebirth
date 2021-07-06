@@ -862,12 +862,23 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                 uint textureNameTableOffset = input.ReadUInt32();
                 uint textureNameTableEntries = input.ReadUInt32();
 
+                StreamWriter mat_anim_txt = new StreamWriter($"{dumpPath}\\mat_anim.txt", true);//vervatim or \\ to \
+                mat_anim_txt.WriteLine($"info");
+                mat_anim_txt.WriteLine($"{materialAnimation.name}");
+                mat_anim_txt.WriteLine($"{materialAnimation.loopMode}");
+                mat_anim_txt.WriteLine($"{materialAnimation.frameSize}");
+                mat_anim_txt.WriteLine($"-----");//like end of smd.
+
+                mat_anim_txt.WriteLine($"texture");
                 data.Seek(textureNameTableOffset, SeekOrigin.Begin);
                 for (int i = 0; i < textureNameTableEntries; i++)
                 {
                     string name = readString(input);
                     materialAnimation.textureName.Add(name);
+                    mat_anim_txt.WriteLine($"{name}");
+
                 }
+                mat_anim_txt.WriteLine($"-----");//like end of smd.
 
                 for (int i = 0; i < dataTableEntries; i++)
                 {
@@ -884,6 +895,10 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                     animationData.type = (RenderBase.OMaterialAnimationType)(animationTypeFlags & 0xff);
                     RenderBase.OSegmentType segmentType = (RenderBase.OSegmentType)((animationTypeFlags >> 16) & 0xf);
 
+                    mat_anim_txt.WriteLine($"animation");
+                    mat_anim_txt.WriteLine($"{animationData.name}");
+                    mat_anim_txt.WriteLine($"{animationData.type}");                    
+
                     int segmentCount = 0;
                     switch (segmentType)
                     {
@@ -892,9 +907,18 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                         case RenderBase.OSegmentType.single: segmentCount = 1; break;
                         case RenderBase.OSegmentType.integer: segmentCount = 1; break;
                     }
+                    switch (segmentType)
+                    {
+                        case RenderBase.OSegmentType.rgbaColor: mat_anim_txt.WriteLine($"rgbaColor"); break;
+                        case RenderBase.OSegmentType.vector2: mat_anim_txt.WriteLine($"vector2"); break;
+                        case RenderBase.OSegmentType.single: mat_anim_txt.WriteLine($"single"); break;
+                        case RenderBase.OSegmentType.integer: mat_anim_txt.WriteLine($"integer"); break;
+                    }
+                    mat_anim_txt.WriteLine($"-----");//like end of smd.
 
                     for (int j = 0; j < segmentCount; j++)
                     {
+                        mat_anim_txt.WriteLine($"frame");
                         RenderBase.OAnimationKeyFrameGroup frame = new RenderBase.OAnimationKeyFrameGroup();
 
                         data.Seek(offset + 0xc + (j * 4), SeekOrigin.Begin);
@@ -918,10 +942,19 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                         }
 
                         animationData.frameList.Add(frame);
+                        foreach (RenderBase.OAnimationKeyFrame keyframe in frame.keyFrames)
+                        {
+                            mat_anim_txt.Write($"{keyframe.frame}    ");
+                            mat_anim_txt.Write($"{keyframe.value}    ");
+                            mat_anim_txt.Write($"{keyframe.inSlope}    ");
+                            mat_anim_txt.WriteLine($"{keyframe.outSlope}    ");
+                        }
+                        mat_anim_txt.WriteLine($"-----");//like end of smd.
                     }
 
                     materialAnimation.data.Add(animationData);
                 }
+                mat_anim_txt.Close();
 
                 models.materialAnimation.list.Add(materialAnimation);
             }
