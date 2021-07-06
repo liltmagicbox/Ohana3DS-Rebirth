@@ -1120,6 +1120,15 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                 cameraAnimation.viewMode = (RenderBase.OCameraView)(modeFlags & 0xf);
                 cameraAnimation.projectionMode = (RenderBase.OCameraProjection)((modeFlags >> 8) & 0xf);
 
+                StreamWriter cam_anim_txt = new StreamWriter($"{dumpPath}\\cam_anim.txt", true);
+                cam_anim_txt.WriteLine($"info");
+                cam_anim_txt.WriteLine($"{cameraAnimation.name}");
+                cam_anim_txt.WriteLine($"{cameraAnimation.loopMode}");
+                cam_anim_txt.WriteLine($"{cameraAnimation.frameSize}");
+                cam_anim_txt.WriteLine($"{cameraAnimation.viewMode}");//aimTarget = 0,    lookAtTarget = 1,   rotate = 2
+                cam_anim_txt.WriteLine($"{cameraAnimation.projectionMode}"); //perspective=0,   orthogonal = 1
+                cam_anim_txt.WriteLine($"-----");//like end of smd.
+
                 for (int i = 0; i < dataTableEntries; i++)
                 {
                     data.Seek(dataTableOffset + (i * 4), SeekOrigin.Begin);
@@ -1135,6 +1144,10 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                     animationData.type = (RenderBase.OCameraAnimationType)(animationTypeFlags & 0xff);
                     RenderBase.OSegmentType segmentType = (RenderBase.OSegmentType)((animationTypeFlags >> 16) & 0xf);
 
+                    cam_anim_txt.WriteLine($"animation");
+                    cam_anim_txt.WriteLine($"{animationData.name}");
+                    cam_anim_txt.WriteLine($"{animationData.type}");
+
                     int segmentCount = 0;
                     switch (segmentType)
                     {
@@ -1142,6 +1155,13 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                         case RenderBase.OSegmentType.vector3: segmentCount = 3; break;
                         case RenderBase.OSegmentType.single: segmentCount = 1; break;
                     }
+                    switch (segmentType)
+                    {
+                        case RenderBase.OSegmentType.transform: cam_anim_txt.WriteLine($"transform"); break;
+                        case RenderBase.OSegmentType.vector3: cam_anim_txt.WriteLine($"vector3"); break;
+                        case RenderBase.OSegmentType.single: cam_anim_txt.WriteLine($"single"); break;
+                    }
+                    cam_anim_txt.WriteLine($"-----");//like end of smd.
 
                     uint constantMask = 0x40;
                     for (int j = 0; j < segmentCount; j++)
@@ -1179,10 +1199,19 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                         }
 
                         animationData.frameList.Add(frame);
+                        foreach (RenderBase.OAnimationKeyFrame keyframe in frame.keyFrames)
+                        {
+                            cam_anim_txt.Write($"{keyframe.frame}    ");
+                            cam_anim_txt.Write($"{keyframe.value}    ");
+                            cam_anim_txt.Write($"{keyframe.inSlope}    ");
+                            cam_anim_txt.WriteLine($"{keyframe.outSlope}    ");
+                        }
+                        cam_anim_txt.WriteLine($"-----");//like end of smd.
                     }
 
                     cameraAnimation.data.Add(animationData);
                 }
+                cam_anim_txt.Close();
 
                 models.cameraAnimation.list.Add(cameraAnimation);
             }
