@@ -1982,8 +1982,8 @@ namespace Ohana3DS_Rebirth.Ohana.Models
             }
             for (int i = 0; i < models.skeletalAnimation.list.Count; i++)
             {
-                string name = models.skeletalAnimation.list[i].name + "_anim.smd";
-                SMD.exportanim(models, Path.Combine(dumpPath, name), i);
+                string name = models.skeletalAnimation.list[i].name + "_skam.smd";
+                SMD.exportskam(models, Path.Combine(dumpPath, name), i);
             }
             return models;
         }
