@@ -141,9 +141,9 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                 }
 
                 if (error) MessageBox.Show(
-                    "One or more bones uses an animation type unsupported by Source Model!", 
-                    "Warning", 
-                    MessageBoxButtons.OK, 
+                    "One or more bones uses an animation type unsupported by Source Model!",
+                    "Warning",
+                    MessageBoxButtons.OK,
                     MessageBoxIcon.Exclamation);
             }
             output.AppendLine("end");
@@ -194,42 +194,73 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
 
         public static void exportskam(RenderBase.OModelGroup model, string fileName, int skeletalAnimationIndex)
         {
-            string skam_name = model.skeletalAnimation.list[skeletalAnimationIndex].name;            
+            string skam_name = model.skeletalAnimation.list[skeletalAnimationIndex].name;
             for (int i = 0; i < model.model.Count; i++)
             {
                 //string skname = models.model[i].name + ".smd";                
                 //SMD.export(models, Path.Combine(dumpPath, name), i);
-                string sk_name = model.model[i].name;                
+                string sk_name = model.model[i].name;
                 if (sk_name == skam_name)
                 {
-                    export(model, fileName, i, skeletalAnimationIndex);                    
+                    export(model, fileName, i, skeletalAnimationIndex);
                 }
             }
 
             // sk.anim is, but no model. assume it is animation only file. need model. we get from smd import.
-            //string name = models.skeletalAnimation.list[i].name + "_skam.smd"; from bch. inpout filename.
+            //string name = models.skeletalAnimation.list[i].name + "_skam.smd"; from bch. input filename.
             if (model.model.Count == 0)
             {
-                //get bone N and load smd skeleton file
-                int boneN = 2;//108bones, but skam only 106
+                //load smds in skeleton dir
+                List<string> bonenameList = new List<string>();
                 foreach (RenderBase.OSkeletalAnimationBone b in ((RenderBase.OSkeletalAnimation)model.skeletalAnimation.list[skeletalAnimationIndex]).bone)
                 {
-                    boneN++;
+                    bonenameList.Add(b.name);
                 }
-                string strFile = $"c:\\ohana\\skeleton\\{boneN}.smd";
-                FileInfo fileInfo = new FileInfo(strFile);
-                if (!fileInfo.Exists)
+
+                string maxhitfile = "";
+                String FolderName = "c:\\ohana\\skeleton";
+                DirectoryInfo di = new DirectoryInfo(FolderName);
+                foreach (FileInfo File in di.GetFiles())
+                {
+                    if (File.Extension.ToLower().CompareTo(".smd") == 0)
+                    {
+                        int hit = 0;
+                        int maxhit = 0;
+                        string currentFile = File.FullName;
+
+                        RenderBase.OModel tmpmdl = import(currentFile).model[0];
+                        for (int i = 0; i < tmpmdl.skeleton.Count; i++)
+                        {
+                            if (bonenameList.Contains(tmpmdl.skeleton[i].name))
+                            {
+                                hit += 1;
+                            }
+                        }
+
+                        if (hit > maxhit)
+                        {
+                            maxhit = hit;
+                            maxhitfile = File.FullName;
+                        }
+
+                    }
+                }
+
+                // if hit, strFile not "". means we got sk and sk.am.
+                string strFile = maxhitfile;
+
+                if (strFile == "")
                 {
                     StringBuilder output2 = new StringBuilder();
-                    output2.AppendLine($"boneN:{boneN}");
+                    //output2.AppendLine($"boneN:{boneN}");
                     foreach (RenderBase.OSkeletalAnimationBone b in ((RenderBase.OSkeletalAnimation)model.skeletalAnimation.list[skeletalAnimationIndex]).bone)
                     {
                         output2.AppendLine($"{b.name}");
                     }
-                    string bonename = $"c:\\ohana\\skeleton\\need_{boneN}.txt";
+                    string bonename = $"c:\\ohana\\skeleton\\need_{model.skeletalAnimation.list[skeletalAnimationIndex].name}.txt";
                     File.WriteAllText(bonename, output2.ToString());
                 }
-                
+
                 //if file exists, load. reveresd for see.
                 else
                 {
@@ -335,9 +366,9 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
 
 
                         if (error) MessageBox.Show(
-                            "One or more bones uses an animation type unsupported by Source Model!",
-                            "Warning",
-                            MessageBoxButtons.OK,
+                            "One or more bones uses an animation type unsupported by Source Model!", 
+                            "Warning", 
+                            MessageBoxButtons.OK, 
                             MessageBoxIcon.Exclamation);
                     }
                     output.AppendLine("end");
@@ -384,8 +415,8 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                         if (parameters.Length == 1)
                         {
                             MessageBox.Show(
-                                "Corrupted SMD file! The version isn't specified!", 
-                                "SMD Importer", 
+                                "Corrupted SMD file! The version isn't specified!",
+                                "SMD Importer",
                                 MessageBoxButtons.OK,
                                 MessageBoxIcon.Error);
                             return null;
@@ -398,7 +429,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                         break;
                     case "nodes":
                         line = readLine(reader);
-                        
+
                         parameters = Regex.Split(line, "\\s+");
 
                         while (parameters[0] != "end")
@@ -462,7 +493,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                                         if (!isReference)
                                         {
                                             boneArray = new RenderBase.OSkeletalAnimationBone[mdl.skeleton.Count];
-                                            
+
                                             int index = 0;
                                             foreach (RenderBase.OBone b in mdl.skeleton)
                                             {
