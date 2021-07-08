@@ -173,11 +173,37 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                         line += " " + getString(vertex.texture0.y);
 
                         int nodeCount = Math.Min(vertex.node.Count, vertex.weight.Count);
+
+                        int firstbone = -2;
+                        
                         line += " " + nodeCount;
                         for (int i = 0; i < nodeCount; i++)
                         {
-                            line += " " + vertex.node[i];
+                            if(firstbone == vertex.node[i])
+                            {
+                                if(firstbone != 0)
+                                {
+                                    line += " " + "0";
+                                }
+                                else
+                                {
+                                    line += " " + "1";
+                                }
+                                
+                            }
+                            else
+                            {
+                                line += " " + vertex.node[i];
+                            }
                             line += " " + getString(vertex.weight[i]);
+
+                            if (i == 0)
+                            {
+                                if (vertex.weight[0] > 0.999 && vertex.weight[0] < 1.0001)
+                                {
+                                    firstbone = vertex.node[i];
+                                }
+                            }
                         }
 
                         output.AppendLine(line);
