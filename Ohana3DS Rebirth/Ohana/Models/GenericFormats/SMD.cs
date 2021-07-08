@@ -192,8 +192,39 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
             File.WriteAllText(fileName, output.ToString());
         }
 
+        //load all of smd
+        public static List<RenderBase.OModel> mdllist = new List<RenderBase.OModel>();
+        public static void loadsmdmdl()
+        {
+            String FolderName = "c:\\ohana\\skeleton";
+            DirectoryInfo di = new DirectoryInfo(FolderName);
+            foreach (FileInfo File in di.GetFiles())
+            {
+                if (File.Extension.ToLower().CompareTo(".smd") == 0)
+                {
+                    string currentFile = File.FullName;
+                    RenderBase.OModel tmpmdl = import(currentFile).model[0];
+                    mdllist.Add(tmpmdl);
+                }
+            }
+        }
+
         public static void exportskam(RenderBase.OModelGroup model, string fileName, int skeletalAnimationIndex)
         {
+            //load smd if fitst time run.
+            if (mdllist.Count == 0) { loadsmdmdl(); }
+            
+            //load mdl from smd if loaded file has no model. model override to new model: model,skam contains.
+            if (model.model.Count == 0)
+            {
+                RenderBase.OModelGroup tmpmdl = new RenderBase.OModelGroup();
+                tmpmdl.skeletalAnimation = model.skeletalAnimation;
+                tmpmdl.model.AddRange(mdllist);
+                model = tmpmdl;//overrides new model.
+            }
+
+            //if model has a model name same of: skam name  ..then export.
+            bool namehit = false;
             string skam_name = model.skeletalAnimation.list[skeletalAnimationIndex].name;
             for (int i = 0; i < model.model.Count; i++)
             {
@@ -202,57 +233,46 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                 string sk_name = model.model[i].name;
                 if (sk_name == skam_name)
                 {
+                    Console.WriteLine("samename");
                     export(model, fileName, i, skeletalAnimationIndex);
+                    namehit = true;
                 }
             }
 
-            // sk.anim is, but no model. assume it is animation only file. need model. we get from smd import.
-            //string name = models.skeletalAnimation.list[i].name + "_skam.smd"; from bch. input filename.
-            if (model.model.Count == 0)
+            //if no match model name,   hit process. each bone name same, as many, export. nomatch: create need_Name.txt in c:\ohana\skeleton.
+            if (namehit == false)
             {
-                //load smds in skeleton dir
+                //get bone name list
                 List<string> bonenameList = new List<string>();
                 foreach (RenderBase.OSkeletalAnimationBone b in ((RenderBase.OSkeletalAnimation)model.skeletalAnimation.list[skeletalAnimationIndex]).bone)
                 {
                     bonenameList.Add(b.name);
                 }
 
-                string maxhitfile = "";
-                String FolderName = "c:\\ohana\\skeleton";
-                DirectoryInfo di = new DirectoryInfo(FolderName);
-                foreach (FileInfo File in di.GetFiles())
+                int maxhitidx = -1;
+                for (int i = 0; i < model.model.Count; i++)
                 {
-                    if (File.Extension.ToLower().CompareTo(".smd") == 0)
+                    int hit = 0;
+                    int maxhit = 0;
+                    for (int j = 0; j < model.model[i].skeleton.Count; j++)
                     {
-                        int hit = 0;
-                        int maxhit = 0;
-                        string currentFile = File.FullName;
-
-                        RenderBase.OModel tmpmdl = import(currentFile).model[0];
-                        for (int i = 0; i < tmpmdl.skeleton.Count; i++)
+                        if (bonenameList.Contains(model.model[i].skeleton[j].name))
                         {
-                            if (bonenameList.Contains(tmpmdl.skeleton[i].name))
-                            {
-                                hit += 1;
-                            }
+                            hit += 1;
                         }
+                    }
 
-                        if (hit > maxhit)
-                        {
-                            maxhit = hit;
-                            maxhitfile = File.FullName;
-                        }
-
+                    if (hit > maxhit)
+                    {
+                        maxhit = hit;
+                        maxhitidx = i;
                     }
                 }
 
-                // if hit, strFile not "". means we got sk and sk.am.
-                string strFile = maxhitfile;
-
-                if (strFile == "")
+                // if not hit, create txt.
+                if (maxhitidx == -1)
                 {
                     StringBuilder output2 = new StringBuilder();
-                    //output2.AppendLine($"boneN:{boneN}");
                     foreach (RenderBase.OSkeletalAnimationBone b in ((RenderBase.OSkeletalAnimation)model.skeletalAnimation.list[skeletalAnimationIndex]).bone)
                     {
                         output2.AppendLine($"{b.name}");
@@ -261,119 +281,14 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                     File.WriteAllText(bonename, output2.ToString());
                 }
 
-                //if file exists, load. reveresd for see.
+                //if we got hit bone-skam couple. model[maxhitidx] is the one!!
                 else
                 {
-                    RenderBase.OModel mdl = import(strFile).model[0];
-
-                    StringBuilder output = new StringBuilder();
-
-                    output.AppendLine("version 1");
-                    output.AppendLine("nodes");
-                    for (int i = 0; i < mdl.skeleton.Count; i++)
-                    {
-                        output.AppendLine(i + " \"" + mdl.skeleton[i].name + "\" " + mdl.skeleton[i].parentId);
-                    }
-                    output.AppendLine("end");
-                    output.AppendLine("skeleton");
-                    {
-                        bool error = false;
-                        for (float frame = 0; frame < model.skeletalAnimation.list[skeletalAnimationIndex].frameSize; frame += 1)
-                        {
-                            output.AppendLine("time " + ((int)frame).ToString());
-                            for (int index = 0; index < mdl.skeleton.Count; index++)
-                            {
-                                RenderBase.OBone newBone = new RenderBase.OBone();
-                                newBone.parentId = mdl.skeleton[index].parentId;
-                                newBone.rotation = new RenderBase.OVector3(mdl.skeleton[index].rotation);
-                                newBone.translation = new RenderBase.OVector3(mdl.skeleton[index].translation);
-                                foreach (RenderBase.OSkeletalAnimationBone b in ((RenderBase.OSkeletalAnimation)model.skeletalAnimation.list[skeletalAnimationIndex]).bone)
-                                {
-                                    if (b.isFullBakedFormat) error = true;
-
-                                    if (b.name == mdl.skeleton[index].name && !b.isFullBakedFormat)
-                                    {
-                                        if (b.isFrameFormat)
-                                        {
-                                            if (b.translation.exists)
-                                            {
-                                                int tFrame = Math.Min((int)frame, b.translation.vector.Count - 1);
-
-                                                newBone.translation.x = b.translation.vector[tFrame].x;
-                                                newBone.translation.y = b.translation.vector[tFrame].y;
-                                                newBone.translation.z = b.translation.vector[tFrame].z;
-                                            }
-
-                                            if (b.rotationQuaternion.exists)
-                                            {
-                                                int qFrame = Math.Min((int)frame, b.rotationQuaternion.vector.Count - 1);
-
-                                                newBone.rotation = b.rotationQuaternion.vector[qFrame].toEuler();
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (b.translationX.exists)
-                                            {
-                                                newBone.translation.x = AnimationUtils.getKey(b.translationX, frame);
-                                                newBone.translation.x *= mdl.skeleton[index].absoluteScale.x;
-                                            }
-
-                                            if (b.translationY.exists)
-                                            {
-                                                newBone.translation.y = AnimationUtils.getKey(b.translationY, frame);
-                                                newBone.translation.y *= mdl.skeleton[index].absoluteScale.y;
-                                            }
-
-                                            if (b.translationZ.exists)
-                                            {
-                                                newBone.translation.z = AnimationUtils.getKey(b.translationZ, frame);
-                                                newBone.translation.z *= mdl.skeleton[index].absoluteScale.z;
-                                            }
-
-                                            if (b.rotationX.exists) newBone.rotation.x = AnimationUtils.getKey(b.rotationX, frame);
-                                            if (b.rotationY.exists) newBone.rotation.y = AnimationUtils.getKey(b.rotationY, frame);
-                                            if (b.rotationZ.exists) newBone.rotation.z = AnimationUtils.getKey(b.rotationZ, frame);
-
-                                            if (b.isAxisAngle)
-                                            {
-                                                if (newBone.rotation.length() == 0)
-                                                {
-                                                    newBone.rotation = new RenderBase.OVector3(0, 0, 0);
-                                                }
-                                                else
-                                                {
-                                                    RenderBase.OVector4 q = new RenderBase.OVector4(newBone.rotation.normalize(), newBone.rotation.length());
-                                                    newBone.rotation = q.toEuler();
-                                                }
-                                            }
-                                        }
-
-                                        break;
-                                    }
-                                }
-
-                                string line = index.ToString();
-                                line += " " + getString(newBone.translation.x);
-                                line += " " + getString(newBone.translation.y);
-                                line += " " + getString(newBone.translation.z);
-                                line += " " + getString(newBone.rotation.x);
-                                line += " " + getString(newBone.rotation.y);
-                                line += " " + getString(newBone.rotation.z);
-                                output.AppendLine(line);
-                            }
-                        }
-
-
-                        if (error) MessageBox.Show(
-                            "One or more bones uses an animation type unsupported by Source Model!", 
-                            "Warning", 
-                            MessageBoxButtons.OK, 
-                            MessageBoxIcon.Exclamation);
-                    }
-                    output.AppendLine("end");
-                    File.WriteAllText(fileName, output.ToString());
+                    Console.WriteLine("hit");
+                    export(model, fileName, maxhitidx, skeletalAnimationIndex);
                 }
+
+                
             }
         }
 
