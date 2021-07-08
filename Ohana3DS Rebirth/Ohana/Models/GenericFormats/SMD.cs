@@ -250,10 +250,10 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                 }
 
                 int maxhitidx = -1;
+                int maxhit = 0;
                 for (int i = 0; i < model.model.Count; i++)
                 {
-                    int hit = 0;
-                    int maxhit = 0;
+                    int hit = 0;                    
                     for (int j = 0; j < model.model[i].skeleton.Count; j++)
                     {
                         if (bonenameList.Contains(model.model[i].skeleton[j].name))
@@ -273,19 +273,30 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                 if (maxhitidx == -1)
                 {
                     StringBuilder output2 = new StringBuilder();
+                    int bi = 0;
                     foreach (RenderBase.OSkeletalAnimationBone b in ((RenderBase.OSkeletalAnimation)model.skeletalAnimation.list[skeletalAnimationIndex]).bone)
                     {
-                        output2.AppendLine($"{b.name}");
+                        output2.AppendLine($"{bi} {b.name}");
+                        bi +=1;
                     }
                     string bonename = $"c:\\ohana\\skeleton\\need_{model.skeletalAnimation.list[skeletalAnimationIndex].name}.txt";
                     File.WriteAllText(bonename, output2.ToString());
+                    string bonemsg = $"none of bone hit. add smd in c:\\ohana\\skeleton";
+                    MessageBox.Show(bonemsg, "can not export..",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
 
                 //if we got hit bone-skam couple. model[maxhitidx] is the one!!
                 else
                 {
                     Console.WriteLine("hit");
-                    export(model, fileName, maxhitidx, skeletalAnimationIndex);
+                    if (maxhit != bonenameList.Count)
+                    {
+                        string bonemsg = $"bone hit: {maxhit} / {bonenameList.Count}";
+                        MessageBox.Show(bonemsg, "bone N not match, export anyway.",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    export(model, fileName, maxhitidx, skeletalAnimationIndex);//this requires the long time. means exportskam works great!
                 }
 
                 
