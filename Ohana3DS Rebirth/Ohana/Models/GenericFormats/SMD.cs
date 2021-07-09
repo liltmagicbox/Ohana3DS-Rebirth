@@ -222,7 +222,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
         public static List<RenderBase.OModel> mdllist = new List<RenderBase.OModel>();
         public static void loadsmdmdl()
         {
-            String FolderName = "c:\\ohana\\skeleton";
+            String FolderName = "skeleton";
             DirectoryInfo di = new DirectoryInfo(FolderName);
             foreach (FileInfo File in di.GetFiles())
             {
@@ -235,18 +235,37 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
             }
         }
 
+        public static string loadmodel = "0";
+        public static void checkloadmodel()
+        {
+            String txtname = "loadmodel.txt";
+            loadmodel = File.ReadAllText(txtname);
+        }
+
         public static void exportskam(RenderBase.OModelGroup model, string fileName, int skeletalAnimationIndex)
         {
             //load smd if fitst time run.
-            if (mdllist.Count == 0) { loadsmdmdl(); }
+            if (mdllist.Count == 0)
+            {
+                loadsmdmdl();
+                checkloadmodel();
+            }
             
             //load mdl from smd if loaded file has no model. model override to new model: model,skam contains.
             if (model.model.Count == 0)
             {
-                RenderBase.OModelGroup tmpmdl = new RenderBase.OModelGroup();
-                tmpmdl.skeletalAnimation = model.skeletalAnimation;
-                tmpmdl.model.AddRange(mdllist);
-                model = tmpmdl;//overrides new model.
+                if (loadmodel=="0")
+                {
+                    RenderBase.OModelGroup tmpmdl = new RenderBase.OModelGroup();
+                    tmpmdl.skeletalAnimation = model.skeletalAnimation;
+                    tmpmdl.model.AddRange(mdllist);
+                    model = tmpmdl;//overrides new model.
+                }
+                else
+                {
+                    model.model.AddRange(mdllist);
+                }
+                
             }
 
             //if model has a model name same of: skam name  ..then export.
@@ -305,9 +324,9 @@ namespace Ohana3DS_Rebirth.Ohana.Models.GenericFormats
                         output2.AppendLine($"{bi} {b.name}");
                         bi +=1;
                     }
-                    string bonename = $"c:\\ohana\\skeleton\\need_{model.skeletalAnimation.list[skeletalAnimationIndex].name}.txt";
+                    string bonename = $"skeleton\\needsmd_for_{model.skeletalAnimation.list[skeletalAnimationIndex].name}.txt";
                     File.WriteAllText(bonename, output2.ToString());
-                    string bonemsg = $"none of bone hit. add smd in c:\\ohana\\skeleton";
+                    string bonemsg = $"none of bone hit. add model smd in skeleton folder.";
                     MessageBox.Show(bonemsg, "can not export..",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }

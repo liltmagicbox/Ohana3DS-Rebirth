@@ -150,12 +150,12 @@ namespace Ohana3DS_Rebirth.Ohana.Models
             string onlyname = Path.GetFileNameWithoutExtension(fileName);
 
             uint filei = 0;
-            dumpPath = $"c:\\ohana\\dump\\{onlyname}";
+            dumpPath = $"dump\\{onlyname}";
             DirectoryInfo di = new DirectoryInfo(dumpPath);
             while (di.Exists)
             {
                 filei++;
-                dumpPath = $"c:\\ohana\\dump\\{onlyname}_{filei}";
+                dumpPath = $"dump\\{onlyname}_{filei}";
                 di = new DirectoryInfo(dumpPath);
             }
             di.Create();
@@ -181,6 +181,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models
         /// <returns></returns>
         public static RenderBase.OModelGroup load(MemoryStream data)
         {
+            string autodump = File.ReadAllText("autodump.txt");
             BinaryReader input = new BinaryReader(data);
             BinaryWriter writer = new BinaryWriter(data);
 
@@ -390,7 +391,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                     textureSize.Width,
                     textureSize.Height,
                     textureCommands.getTexUnit0Format());
-                texture.Save($"{dumpPath}\\{textureName}.bmp");// dumps in filename dir.
+                if(autodump=="1") texture.Save($"{dumpPath}\\{textureName}.png");// dumps in filename dir.
                 models.texture.Add(new RenderBase.OTexture(texture, textureName));
             }
 
@@ -1974,17 +1975,21 @@ namespace Ohana3DS_Rebirth.Ohana.Models
 
             data.Close();
 
-            //dump,yeah. for each model.                                    
-            for (int i = 0; i < models.model.Count; i++)
+            if (autodump == "1")
             {
-                string name = models.model[i].name + ".smd";
-                SMD.export(models, Path.Combine(dumpPath, name), i);                
+                //dump,yeah. for each model.                                    
+                for (int i = 0; i < models.model.Count; i++)
+                {
+                    string name = models.model[i].name + ".smd";
+                    SMD.export(models, Path.Combine(dumpPath, name), i);
+                }
+                for (int i = 0; i < models.skeletalAnimation.list.Count; i++)
+                {
+                    string name = models.skeletalAnimation.list[i].name + "_skam.smd";
+                    SMD.exportskam(models, Path.Combine(dumpPath, name), i);
+                }
             }
-            for (int i = 0; i < models.skeletalAnimation.list.Count; i++)
-            {
-                string name = models.skeletalAnimation.list[i].name + "_skam.smd";
-                SMD.exportskam(models, Path.Combine(dumpPath, name), i);
-            }
+            
             return models;
         }
 
