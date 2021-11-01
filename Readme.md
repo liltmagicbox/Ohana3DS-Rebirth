@@ -1,3 +1,7 @@
+## AUTO DUMP**
+changed little to export resources very fast.
+texture, model, and custom(not perfect yet) cam, 2d anim.
+
 ## **Ohana3DS Rebirth**
 
 ### **What is Ohana3DS?**
