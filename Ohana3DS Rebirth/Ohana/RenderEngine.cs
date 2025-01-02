@@ -812,6 +812,7 @@ namespace Ohana3DS_Rebirth.Ohana
 
                     if (fragmentShaderMode)
                     {
+                        Console.WriteLine("shasha");
                         #region "Shader combiner parameters"
                         RenderBase.OMaterialColor materialColor = new RenderBase.OMaterialColor();
                         materialColor = material.materialColor;
@@ -909,6 +910,7 @@ namespace Ohana3DS_Rebirth.Ohana
                         name[0] = material.name0;
                         name[1] = material.name1;
                         name[2] = material.name2;
+                        Console.WriteLine(textures[i].name);
 
                         if (ctrlMA.animate)
                         {

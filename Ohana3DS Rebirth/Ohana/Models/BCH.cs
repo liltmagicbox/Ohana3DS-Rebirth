@@ -181,7 +181,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models
         /// <returns></returns>
         public static RenderBase.OModelGroup load(MemoryStream data)
         {
-            string autodump = File.ReadAllText("autodump.txt");
+            string autodump = File.ReadAllText("autodump.txt");//if not file at exe, 'System.IO.FileNotFoundException'(mscorlib.dll)
             BinaryReader input = new BinaryReader(data);
             BinaryWriter writer = new BinaryWriter(data);
 
@@ -349,7 +349,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                 sceneNameOffset = input.ReadUInt32()
             };
             //Note: NameOffset are PATRICIA trees
-
+            //Console.WriteLine(contentHeader.shadersPointerTableEntries);// shader 0.fine.
             //Shaders
             for (int index = 0; index < contentHeader.shadersPointerTableEntries; index++)
             {
@@ -359,6 +359,8 @@ namespace Ohana3DS_Rebirth.Ohana.Models
 
                 uint shaderDataOffset = input.ReadUInt32();
                 uint shaderDataLength = input.ReadUInt32();
+
+                Console.WriteLine(shaderDataLength);
             }
 
             //Textures
@@ -408,6 +410,7 @@ namespace Ohana3DS_Rebirth.Ohana.Models
 
                 RenderBase.OLookUpTable table = new RenderBase.OLookUpTable();
                 table.name = name;
+                //Console.WriteLine(name);
                 for (int i = 0; i < samplersCount; i++)
                 {
                     RenderBase.OLookUpTableSampler sampler = new RenderBase.OLookUpTableSampler();
@@ -416,11 +419,13 @@ namespace Ohana3DS_Rebirth.Ohana.Models
                     uint tableOffset = input.ReadUInt32();
                     uint tableWordCount = input.ReadUInt32();
                     sampler.name = readString(input);
+                    Console.WriteLine(sampler.name);
 
                     long dataPosition = data.Position;
                     data.Seek(tableOffset, SeekOrigin.Begin);
                     PICACommandReader lutCommands = new PICACommandReader(data, tableWordCount);
                     sampler.table = lutCommands.getFSHLookUpTable();
+                    Console.WriteLine(sampler.table);
                     table.sampler.Add(sampler);
 
                     data.Seek(dataPosition, SeekOrigin.Begin);
